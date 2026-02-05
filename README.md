@@ -18,7 +18,7 @@ Users accessing the final website will be able to read the model generation code
 
 ## How to use
 
-Take a look at the [example web interface](https://hephaisto.github.com/openswebcad2).
+Take a look at the [example web interface](https://hephaisto.github.io/openswebcad2).
 
 ### Getting started
 * Clone the repository
