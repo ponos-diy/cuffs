@@ -1,8 +1,10 @@
 from typing import Literal, Any, _LiteralGenericAlias
 import base64
 import inspect
+import importlib
 
 import js
+import pyodide
 from pyodide.ffi import create_proxy
 from pyodide.http import pyfetch
 
@@ -128,15 +130,34 @@ class ModelWrapper:
         self.start_button.disabled = False
         print("generation successful")
 
-def run(model):
+async def run(model):
     print("openswebcad loading")
 
     display = js.document.getElementById("model-display")
     form = js.document.getElementById("parameter-selection")
     assert display
 
-    model = ModelWrapper(display, form, model.generate)
+    await load_local_includes(model)
+
+    model_wrapper = ModelWrapper(display, form, model.generate)
     print("setup completed")
+
+async def load_local_includes(model):
+    if not hasattr(model, "includes"):
+        return
+    for name, url in model.includes.items():
+        module = await load_file(name, url)
+        setattr(model, name, module)
+
+async def load_file(name: str, url: str):
+    response = await pyfetch(f"./{name}.py")
+    local = f"{name}.py"
+    with open(local, "wb") as f:
+        f.write(await response.bytes())
+    spec = importlib.util.spec_from_file_location(name, local)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 # parameter parsing
 class NumericParameter(Parameter):
