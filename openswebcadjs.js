@@ -82,19 +82,18 @@ with open("${filename}", "wb") as f:
 }
 
 async function installPackages(pyodide) {
+	await pyodide.loadPackage("micropip");
+	const micropip = pyodide.pyimport("micropip");
 	let ps = packages()
-	ps.forEach(async (p) => {
+	for(const p of packages()) {
 		console.log(`installing ${p}`);
 		await micropip.install(p);
-	});
+	}
 }
 
 async function loadOpenswebcad(openscad){
 	let pyodide = await loadPyodide();
-	//pyodide.setDebug(true);
-	await pyodide.loadPackage("micropip");
-	const micropip = pyodide.pyimport("micropip");
-	await micropip.install("muscad");
+	await installPackages(pyodide);
 	await downloadFile(pyodide, "openswebcad.py");
 	await downloadFile(pyodide, "parse.py");
 	await downloadFile(pyodide, "model.py");
