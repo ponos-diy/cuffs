@@ -1,6 +1,6 @@
 # openswebcad 2
 
-Openswebcad (OpenSCAD+web) generates STL objects from python code via openscad in your browser.
+OpenSWebCAD (OpenSCAD+web) generates STL objects from python code via openscad in your browser.
 
 ## Differences to other projects
 [OpenSCAD](https://openscad.org/) is what started the whole journey.
@@ -11,7 +11,7 @@ These rely completely on Python to do all variable handling, and only export con
 Generation of OpenSCAD code requires a local Python installation and command line usage, which is not accessible to every user (we expect users of our models to operate their own printers, but some people just order printed parts online).
 Various projects exist which allow parametrization of models for openscad variables in the browser, e.g. [3dcustomizer.net/sandbox](https://3dcustomizer.net/sandbox) and [ochafik.com/openscad2](https://ochafik.com/openscad2/).
 
-OpenSCAD provides a similar experience as those services, but for the Python-centric workflow without OpenSCAD variables.
+OpenSWebCAD provides a similar experience as those services, but for the Python-centric workflow without OpenSCAD variables.
 
 Note that this project is aimed at open-source-hardware enthusiasts.
 Users accessing the final website will be able to read the model generation code.
