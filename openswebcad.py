@@ -108,7 +108,7 @@ class ModelWrapper:
             self.viewers[name]["spinner"].style.display = "block"
         for name, code in scad_codes:
             self.counter += 1
-            await renderOpenscadToViewer(code, str(self.counter), self.viewers[name]["viewer"], self.viewers[name]["link"])
+            await renderOpenscadToViewer(code, name, self.viewers[name]["viewer"], self.viewers[name]["link"])
             self.viewers[name]["spinner"].style.display = "none"
             print(f"finished updating model {name}")
 
