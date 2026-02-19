@@ -3,7 +3,7 @@ from typing import Literal
 
 from muscad import Cube, Cylinder, Union
 
-from openswebcad import InvalidParameterException
+from util import InvalidParameterException
 
 if sys.platform == 'emscripten':
     # direct import is not possible, since we need to download the files manually

@@ -1,6 +1,5 @@
 from typing import Literal, Any, _LiteralGenericAlias
 import base64
-import inspect
 import importlib
 
 import js
@@ -8,11 +7,8 @@ import pyodide
 from pyodide.ffi import create_proxy
 from pyodide.http import pyfetch
 
-
-class InvalidParameterException(RuntimeError):
-    def __init__(self, parameters: list[str], message: str):
-        super().__init__(f"Parameter(s) {parameters} are invalid: {message}")
-        self.parameters = parameters
+import parse
+from util import InvalidParameterException
 
 class Parameter:
     def __init__(self, description):
@@ -229,22 +225,16 @@ class ChoiceParameter(Parameter):
         form.appendChild(group)
 
 
-class InvalidParameterAnnotation(RuntimeError):
-    def __init__(self, *args, **kwargs):
-        super().__init__(self, *args, **kwargs)
-
-
-
-def parse_parameter(name: str, hint) -> Parameter:
-    if isinstance(hint, _LiteralGenericAlias):
-        return ChoiceParameter(name=name, description=name, choices=[str(a) for a in hint.__args__])
-    for t in (int, float):
-        if t == hint:
-            return NumericParameter(name=name, description=name, t=t)
-    raise InvalidParameterAnnotation(f"{name}: unknown parameter type: {hint}")
 
 
 
 def parse_parameters(generator_func):
-    return [parse_parameter(name, hint) for name, hint in inspect.get_annotations(generator_func).items() if name != "return"]
+    return [map_parameter(p) for p in parse.parse_parameters(generator_func)]
 
+def map_parameter(p: parse.Parameter) -> Parameter:
+    assert isinstance(p, parse.Parameter)
+    if isinstance(p, parse.NumericParameter):
+        return NumericParameter(name=p.name, description=p.description, t=p.t)
+    if isinstance(p, parse.ChoiceParameter):
+        return ChoiceParameter(name=p.name, description=p.description, choices=p.choices)
+    raise NotImplementedError(f"unknown parameter type: {type(parameter)}")

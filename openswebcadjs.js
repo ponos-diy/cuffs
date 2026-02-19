@@ -96,7 +96,9 @@ async function loadOpenswebcad(openscad){
 	const micropip = pyodide.pyimport("micropip");
 	await micropip.install("muscad");
 	await downloadFile(pyodide, "openswebcad.py");
+	await downloadFile(pyodide, "parse.py");
 	await downloadFile(pyodide, "model.py");
+	await downloadFile(pyodide, "util.py");
 	pyodide.globals.set("createRendererSurrounding", createRendererSurrounding);
 	pyodide.globals.set("createRenderer", createRenderer);
 	pyodide.globals.set("createRendererSpinner", createRendererSpinner);
