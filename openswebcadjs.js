@@ -28,7 +28,7 @@ export function createRendererSpinner(parentNode) {
 export function createRenderer(parentNode) {
 	return new OV.EmbeddedViewer (parentNode, {
 		camera : new OV.Camera (
-			new OV.Coord3D (-1.5, 2.0, 3.0),
+			new OV.Coord3D (-75.0, 100.0, 150.0),
 			new OV.Coord3D (0.0, 0.0, 0.0),
 			new OV.Coord3D (0.0, 1.0, 0.0),
 			45.0
