@@ -1,3 +1,4 @@
+import asyncio
 from typing import Literal, Any, _LiteralGenericAlias
 import base64
 import importlib
@@ -9,6 +10,28 @@ from pyodide.http import pyfetch
 
 import parse
 from util import InvalidParameterException
+
+
+async def run_scad_worker(name: str, scad_code: str):
+    assert isinstance(scad_code, str)
+    worker = js.Worker.new("worker.js", js.Object.fromEntries([["type", "module"]]))
+    future = asyncio.get_event_loop().create_future()
+
+    def on_message(event):
+        future.set_result(event.data)
+        worker.terminate()
+
+    def on_error(event):
+        future.set_exception(RuntimeError("openscad run failed"))
+        worker.terminate()
+
+    worker.onmessage = on_message
+    worker.onerror = on_error
+
+    worker.postMessage(js.Object.fromEntries([["name", name], ["scad_code", scad_code]]))
+
+    return future
+
 
 class Parameter:
     def __init__(self, description):
@@ -106,11 +129,25 @@ class ModelWrapper:
             self.init_display(scad_codes)
         for name, _ in scad_codes:
             self.viewers[name]["spinner"].style.display = "block"
+        stl_futures = []
         for name, code in scad_codes:
             self.counter += 1
-            await renderOpenscadToViewer(code, name, self.viewers[name]["viewer"], self.viewers[name]["link"])
-            self.viewers[name]["spinner"].style.display = "none"
-            print(f"finished updating model {name}")
+            stl_futures.append(await run_scad_worker(name, code))
+        for future in asyncio.as_completed(stl_futures):
+            stl_data = (await future).to_py()
+            self.render_stl(stl_data["name"], stl_data["stl"])
+
+    def render_stl(self, name: str, stl_data):
+        stl = js.Uint8Array.new(stl_data)
+        blob = js.Blob.new([stl], {"type": "application/octet-stream"})
+        url = js.URL.createObjectURL(blob)
+        viewer_file_name = f"/{name}_view.stl"
+        file_fp = js.File.new([stl], viewer_file_name, {"type": "application/octet-stream"})
+        self.viewers[name]["link"].href = url
+        self.viewers[name]["link"].download = f"{name}.stl"
+        self.viewers[name]["viewer"].LoadModelFromFileList([file_fp])
+        self.viewers[name]["spinner"].style.display = "none"
+        print(f"finished updating model {name}")
 
     def show_status_error(self, message: str | InvalidParameterException):
         if isinstance(message, InvalidParameterException):
