@@ -1,6 +1,5 @@
 import OpenSCAD from "./openscad-wasm/openscad.js";
 import "https://cdn.jsdelivr.net/pyodide/v0.28.3/full/pyodide.js";
-import {packages} from "./packages.js";
 
 export async function main(){
 	await loadOpenswebcad();
@@ -50,13 +49,25 @@ with open("${filename}", "wb") as f:
 `);
 }
 
+async function getRequirements() {
+	const response = await fetch("requirements.txt");
+	if(!response.ok) {
+		throw new Error("Failed to download requirements.txt");
+	}
+	const text = await response.text();
+	return text.split(/r?\n/);
+}
+
 async function installPackages(pyodide) {
 	await pyodide.loadPackage("micropip");
 	const micropip = pyodide.pyimport("micropip");
-	let ps = packages()
-	for(const p of packages()) {
-		console.log(`installing ${p}`);
-		await micropip.install(p);
+	await downloadFile(pyodide, "requirements.txt");
+	const requirements = await getRequirements();
+	for (const r of requirements) {
+		if(!r.trim())
+			continue;
+		console.log(`installing ${r}`);
+		await micropip.install(r);
 	}
 }
 
