@@ -41,7 +41,7 @@ def check_parameters(parameter_definitions: list[parse.Parameter], parameters: d
         try:
             definition = parameters[p.name]
         except KeyError:
-            raise RuntimeError(f"value for '{p.name}=' not given on command line")
+            raise RuntimeError(f"value for '{p.name}=' not given on command line") from None
         value = check_parameter(p, definition)
         result[p.name] = value
     return result
