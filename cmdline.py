@@ -9,7 +9,7 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument("out", type=Path, help="file to write to")
     parser.add_argument("--format", "-f", choices=["openscad"], default="openscad", help="Output format")
-    parser.add_argument("parameters", type=str, nargs="+", help="parameters in 'key=value' format")
+    parser.add_argument("parameters", type=str, nargs="*", help="parameters in 'key=value' format")
     return parser.parse_args()
 
 def parse_cmdline_params(args) -> dict[str, str]:
@@ -29,7 +29,7 @@ def check_parameter(parameter_definition: parse.Parameter, value: str):
             return parameter_definition.t(value)
         if isinstance(parameter_definition, parse.ChoiceParameter):
             if not value in parameter_definition.choices:
-                raise RuntimeError(f"{value} must be one of {parameter_definition.choices}")
+                raise RuntimeError(f"{value} must be one of {parameter_definition.choices}") from None
             return value
     except Exception as e:
         e.add_note(f"while parsing parameter {parameter_definition.name}")
@@ -39,10 +39,13 @@ def check_parameters(parameter_definitions: list[parse.Parameter], parameters: d
     result = {}
     for p in parameter_definitions:
         try:
-            definition = parameters[p.name]
+            value = parameters[p.name]
         except KeyError:
-            raise RuntimeError(f"value for '{p.name}=' not given on command line") from None
-        value = check_parameter(p, definition)
+            if p.default:
+                value = p.default
+            else:
+                raise RuntimeError(f"mandatory value for '{p.name}=' not given on command line") from None
+        value = check_parameter(p, value)
         result[p.name] = value
     return result
 
