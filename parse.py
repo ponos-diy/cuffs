@@ -25,7 +25,7 @@ class InvalidParameterAnnotation(RuntimeError):
 
 def parse_parameter(name: str, parameter: inspect.Parameter) -> Parameter:
     hint = parameter.annotation
-    default = parameter.default
+    default = None if parameter.default is inspect.Parameter.empty else parameter.default
     if isinstance(hint, _LiteralGenericAlias):
         choices = [str(a) for a in hint.__args__]
         if default is not None and default not in choices:
@@ -33,7 +33,7 @@ def parse_parameter(name: str, parameter: inspect.Parameter) -> Parameter:
         return ChoiceParameter(name=name, description=name, choices=choices, default=default)
     for t in (int, float):
         if t == hint:
-            if not isinstance(default, t):
+            if not isinstance(default, t) and default is not None:
                 raise InvalidParameterAnnotation("{name}: invalid default (wrong type): {default}")
             return NumericParameter(name=name, description=name, t=t, default=default)
     raise InvalidParameterAnnotation(f"{name}: unknown parameter type: {hint}")
