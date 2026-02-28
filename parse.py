@@ -10,10 +10,12 @@ class Parameter:
 @dataclass
 class NumericParameter(Parameter):
     t: Any
+    default: int|float|None
 
 @dataclass
 class ChoiceParameter(Parameter):
     choices: list[str]
+    default: str|None
 
 class InvalidParameterAnnotation(RuntimeError):
     def __init__(self, *args, **kwargs):
@@ -21,16 +23,24 @@ class InvalidParameterAnnotation(RuntimeError):
 
 
 
-def parse_parameter(name: str, hint) -> Parameter:
+def parse_parameter(name: str, parameter: inspect.Parameter) -> Parameter:
+    hint = parameter.annotation
+    default = None if parameter.default is inspect.Parameter.empty else parameter.default
     if isinstance(hint, _LiteralGenericAlias):
-        return ChoiceParameter(name=name, description=name, choices=[str(a) for a in hint.__args__])
+        choices = [str(a) for a in hint.__args__]
+        if default is not None and default not in choices:
+            raise InvalidParameterAnnotation(f"{name}: invalid default (not valid choice): {default}")
+        return ChoiceParameter(name=name, description=name, choices=choices, default=default)
     for t in (int, float):
         if t == hint:
-            return NumericParameter(name=name, description=name, t=t)
+            if not isinstance(default, t) and default is not None:
+                raise InvalidParameterAnnotation("{name}: invalid default (wrong type): {default}")
+            return NumericParameter(name=name, description=name, t=t, default=default)
     raise InvalidParameterAnnotation(f"{name}: unknown parameter type: {hint}")
 
 
 
 def parse_parameters(generator_func) -> list[Parameter]:
-    return [parse_parameter(name, hint) for name, hint in inspect.get_annotations(generator_func).items() if name != "return"]
+    signature = inspect.signature(generator_func)
+    return [parse_parameter(name, p) for name, p in signature.parameters.items()]
 

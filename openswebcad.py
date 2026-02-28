@@ -80,7 +80,7 @@ class ModelWrapper:
         async def on_generate(event):
             await self.update_viewers()
         self.start_button.addEventListener("click", create_proxy(on_generate))
-        self.start_button.disabled = True
+        self.start_button.disabled = any(p.default is None for p in self.parameters)
         form.appendChild(self.start_button)
 
 
@@ -194,15 +194,19 @@ async def load_file(name: str, url: str):
 
 # parameter parsing
 class NumericParameter(Parameter):
-    def __init__(self, name: str, description: str, t: Literal[int, float]):
+    def __init__(self, name: str, description: str, t: Literal[int, float], default: int|float|None):
         super().__init__(description)
         self.name = name
         self.convert = t
+        self.default = default
+        self.value = default
 
     def add_form_element(self, form, on_change_cb):
         d = self.add_description(form)
         i = js.document.createElement("input")
         i.type = "number"
+        if self.default is not None:
+            i.value = self.default
         i.classList.add("form-control")
         #i.id = f"parameter-{self.name}"
 
@@ -219,11 +223,13 @@ class NumericParameter(Parameter):
         form.appendChild(i)
 
 class ChoiceParameter(Parameter):
-    def __init__(self, name: str, description: str, choices: list[str]):
+    def __init__(self, name: str, description: str, choices: list[str], default: str|None):
         super().__init__(description)
         self.name = name
         self.parameter_target = None
         self.choices = choices
+        self.default = default
+        self.value = default
 
     def add_form_element(self, form, on_change_cb):
         d = self.add_description(form)
@@ -236,6 +242,8 @@ class ChoiceParameter(Parameter):
             i = js.document.createElement("input")
             i.type = "radio"
             i.value = choice
+            if choice == self.default:
+                i.checked = True
             i.name = f"parameter-{self.name}"
             i.id = f"parameter-{self.name}-{choice}"
             i.classList.add("btn-check")
@@ -271,7 +279,7 @@ def parse_parameters(generator_func):
 def map_parameter(p: parse.Parameter) -> Parameter:
     assert isinstance(p, parse.Parameter)
     if isinstance(p, parse.NumericParameter):
-        return NumericParameter(name=p.name, description=p.description, t=p.t)
+        return NumericParameter(name=p.name, description=p.description, t=p.t, default=p.default)
     if isinstance(p, parse.ChoiceParameter):
-        return ChoiceParameter(name=p.name, description=p.description, choices=p.choices)
+        return ChoiceParameter(name=p.name, description=p.description, choices=p.choices, default=p.default)
     raise NotImplementedError(f"unknown parameter type: {type(parameter)}")
