@@ -280,11 +280,11 @@ def padding_holder(thickness, length, width, chamfer_r, padding_length, show_pad
     return result
 
 def generate(
-        width: float,
-        height: float,
-        corner_radius: float,
-        height_offset: float,
-        fill_bottom: Literal["both", "none"],
+        width: float = 65.0,
+        height: float = 45.0,
+        corner_radius: float = 20.0,
+        height_offset: float = 0.0,
+        fill_bottom: Literal["both", "none"] = "both",
         ) -> list[tuple[str, str]]:
     params = dict(
             thickness=15.0,
